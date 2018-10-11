@@ -127,6 +127,64 @@ class ImageClass(BaseQuery):
         return name
 
 
+    def get_image(self, row_or_url,filename=None):
+        """Give it a row of a table of Image results, returns either an image (IPython.display.Image) or writes the specified filename."""
+        import requests
+        if type(row_or_url) is ImRow:
+            url=row_or_url[ImageColumn.ACCESS_URL]
+        elif type(row_or_url) is str:
+            url=row_or_url
+        else:
+            raise ValueError("Please specify a string URL or a row of a table of results.") 
+
+        r=requests.get(url, stream=True)
+
+        if filename is None:
+            savename='tmp_image.jpg'
+        else:
+            savename=filename
+        with open(savename,'wb') as f:
+            f.write(r.content)
+        if filename is not None:
+            print("Image written to {}\n".format(filename))
+            return 
+        else:
+            from IPython.display import Image as ipImage
+            import os
+            im=ipImage(savename)
+            os.remove(savename)
+            return im 
+
+
+    def get_fits(self, row_or_url,filename=None):
+        """Give it a row of a table of Image results, returns either a FITS HDU list from astropy.io.fits type or writes the specified filename."""
+        import requests
+        if type(row_or_url) is ImRow:
+            url=row_or_url[ImageColumn.ACCESS_URL]
+        elif type(row_or_url) is str:
+            ## Why doesn't this work?
+            url=row_or_url
+        else:
+            raise ValueError("Please specify a string URL or a row of a table of results.") 
+
+        r=requests.get(url, stream=True)
+        if filename is None:
+            savename='tmp_image.fits'
+        else:
+            savename=filename
+        with open(savename,'wb') as f:
+            f.write(r.content)
+
+        if filename is not None:
+            print("FITS image written to {}\n".format(filename))
+            return 
+        else:
+           from astropy.io import fits
+           return fits.open(savename)
+           
+
+
+
 
 Image = ImageClass()
 
