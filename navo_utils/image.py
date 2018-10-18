@@ -180,7 +180,10 @@ class ImageClass(BaseQuery):
             return 
         else:
            from astropy.io import fits
-           return fits.open(savename)
+           import os
+           im=fits.open(savename)
+           os.remove(savename)
+           return im
            
 
 
