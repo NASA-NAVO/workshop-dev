@@ -57,6 +57,7 @@ class RegistryClass(BaseQuery):
         # Default values
         service_type = ""
         keyword = ""
+        not_keyword = ""
         waveband = ""
         source = ""
         publisher = ""
@@ -69,6 +70,8 @@ class RegistryClass(BaseQuery):
                 service_type = val
             elif key == 'keyword':
                 keyword = val
+            elif key == 'not_keyword':
+                not_keyword = val
             elif key == 'waveband':
                 waveband = val
             elif key == 'source':
@@ -133,6 +136,14 @@ class RegistryClass(BaseQuery):
             cap.ivoid like '%{}%')
             """.format(keyword, keyword, keyword)
             wheres.append(keyword_where)
+
+        if not_keyword != "":
+            notkey_where="""
+            not (res.res_description like '%{}%' or
+            res.res_title like '%{}%' or
+            cap.ivoid like '%{}%')
+            """.format(not_keyword, not_keyword, not_keyword)
+
 
         query_where = query_where+logic_string.join(wheres)
 

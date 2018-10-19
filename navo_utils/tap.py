@@ -6,7 +6,7 @@ VO Queries
 from __future__ import print_function, division
 #from IPython.core.debugger import Tracer
 from astroquery.query import BaseQuery
-from astroquery.utils.tap.core import TapPlus
+from astroquery.utils.tap.core import Tap as coreTap
 import numpy
 from . import utils
 
@@ -71,8 +71,8 @@ class TapClass(BaseQuery):
 
     def list_tables(self,service_url):
         """Uses TapPlus() 'TAP-compatible' function to list tables at a given service"""
-        tap_service = TapPlus(url=service_url)
-        tables=tap_service.load_tables(only_names=True)
+        tap_service = coreTap(url=service_url)
+        tables=tap_service.load_tables()
         for table in (tables):
             print(table.get_qualified_name())
 
