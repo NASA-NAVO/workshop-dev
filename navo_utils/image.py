@@ -6,6 +6,8 @@ from astroquery.query import BaseQuery
 from astroquery.utils import parse_coordinates
 from astropy.coordinates import SkyCoord
 from astropy.table import Table, Row
+##  Only for debugging
+import traceback 
 
 from . import utils
 
@@ -78,11 +80,12 @@ class ImageClass(BaseQuery):
         for result in result_list:
             try:
                 image_table = ImageTable(result, copy=False)
-            except:
+            except Exception as e:
                 image_table = Table()
                 image_table.meta=result.meta
                 image_result_list.append(image_table)
-                print("ERROR parsing result as ImageTable. Setting as empty and appending meta-data")
+                print("ERROR parsing result as ImageTable:  {}.\nWARNING:  Setting as empty and appending meta-data".format(e))
+                traceback.print_exc()
             image_result_list.append(image_table)
 
 #        for result in result_list:
@@ -129,6 +132,8 @@ class ImageClass(BaseQuery):
 
     def get_image(self, row_or_url,filename=None):
         """Give it a row of a table of Image results, returns either an image (IPython.display.Image) or writes the specified filename."""
+        ##from astroquery.query import BaseQuery
+        ##bq = BaseQuery()
         import requests
         if type(row_or_url) is ImRow:
             url=row_or_url[ImageColumn.ACCESS_URL]
@@ -137,7 +142,8 @@ class ImageClass(BaseQuery):
         else:
             raise ValueError("Please specify a string URL or a row of a table of results.") 
 
-        r=requests.get(url, stream=True)
+        r=requests.get(url,stream=True)
+        ##r=bq._request('GET',url, stream=True)
 
         if filename is None:
             savename='tmp_image.jpg'
@@ -158,6 +164,8 @@ class ImageClass(BaseQuery):
 
     def get_fits(self, row_or_url,filename=None):
         """Give it a row of a table of Image results, returns either a FITS HDU list from astropy.io.fits type or writes the specified filename."""
+        ##from astroquery.query import BaseQuery
+        ##bq = BaseQuery()
         import requests
         if type(row_or_url) is ImRow:
             url=row_or_url[ImageColumn.ACCESS_URL]
@@ -167,7 +175,9 @@ class ImageClass(BaseQuery):
         else:
             raise ValueError("Please specify a string URL or a row of a table of results.") 
 
-        r=requests.get(url, stream=True)
+        r=requests.get(url,stream=True)
+        ##r=bq._request('GET',url, stream=True)
+
         if filename is None:
             savename='tmp_image.fits'
         else:
@@ -302,10 +312,21 @@ class ImRow(Row):
             colname = self.table.stdcol_to_colname(item)
             val = None
             if colname is not None:
-                val = super().__getitem__(colname)
+                try:
+                    ## Python 3 only 
+                    val = super().__getitem__(colname)
+                except:
+                    ## Python 2 only
+                    val = super(ImRow,self).__getitem__(colname)
+
             return val
         else:
-            return super().__getitem__(item)
+            try:
+                ## Python 3 only 
+                return super().__getitem__(item)
+            except:
+                ## Python 2 only 
+                return super(ImRow,self).__getitem__(item)
 
 
 class ImageTable(Table):
@@ -358,9 +379,20 @@ class ImageTable(Table):
             if colname is None:
                 return None
             else:
-                return super().__getitem__(colname)
+                try:
+                    ## Python 3 only 
+                    return super().__getitem__(colname)
+                except:
+                    ## Python 2 only
+                    return super(ImageTable,self).__getitem__(colname)
         else:
-            return super().__getitem__(item)
+            try:
+                ## Python 3 only 
+                return super().__getitem__(item)
+            except:
+                ## Python 2 only 
+                return super(ImageTable,self).__getitem__(item)
+
 
     def stdcol_to_colname(self, mnemonic):
         if not isinstance(mnemonic, ImageColumn):
@@ -370,10 +402,11 @@ class ImageTable(Table):
             name = ucdmap.get(mnemonic.name)
         return name
 
+
     def colname_to_stdcol(self, colname):
         imgcol = None
         if colname not in self.colnames:
-            raise ValueError(f'colname {colname} is not the name of a column in this table.')
+            raise ValueError("colname {} is not the name of a column in this table".format(colname))
         else:
             ucdmap = self.get_ucdmap()
             for img, col in ucdmap.items():
