@@ -132,9 +132,9 @@ class ImageClass(BaseQuery):
 
     def get_image(self, row_or_url,filename=None):
         """Give it a row of a table of Image results, returns either an image (IPython.display.Image) or writes the specified filename."""
-        ##from astroquery.query import BaseQuery
-        ##bq = BaseQuery()
-        import requests
+        from astroquery.query import BaseQuery
+        bq = BaseQuery()
+        #import requests
         if type(row_or_url) is ImRow:
             url=row_or_url[ImageColumn.ACCESS_URL]
         elif type(row_or_url) is str:
@@ -142,8 +142,8 @@ class ImageClass(BaseQuery):
         else:
             raise ValueError("Please specify a string URL or a row of a table of results.") 
 
-        r=requests.get(url,stream=True)
-        ##r=bq._request('GET',url, stream=True)
+        ##r=requests.get(url,stream=True)
+        r=bq._request('GET',url, stream=True)
 
         if filename is None:
             savename='tmp_image.jpg'
@@ -164,9 +164,9 @@ class ImageClass(BaseQuery):
 
     def get_fits(self, row_or_url,filename=None):
         """Give it a row of a table of Image results, returns either a FITS HDU list from astropy.io.fits type or writes the specified filename."""
-        ##from astroquery.query import BaseQuery
-        ##bq = BaseQuery()
-        import requests
+        from astroquery.query import BaseQuery
+        bq = BaseQuery()
+        ##import requests
         if type(row_or_url) is ImRow:
             url=row_or_url[ImageColumn.ACCESS_URL]
         elif type(row_or_url) is str:
@@ -175,8 +175,8 @@ class ImageClass(BaseQuery):
         else:
             raise ValueError("Please specify a string URL or a row of a table of results.") 
 
-        r=requests.get(url,stream=True)
-        ##r=bq._request('GET',url, stream=True)
+        ##r=requests.get(url,stream=True)
+        r=bq._request('GET',url, stream=True)
 
         if filename is None:
             savename='tmp_image.fits'

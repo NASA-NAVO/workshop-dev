@@ -237,6 +237,11 @@ def try_query(url, retries=3, timeout=60, get_params=None, post_data=None, files
     from astroquery.query import BaseQuery
     from IPython.core.debugger import Tracer
 
+    ## For XML entities like "&amp;" that may or may not be handled correctly server-side
+    from astropy.utils.xml.unescaper import unescape_all
+    url=unescape_all(url)
+
+    """
     ## This is necessary for some services, e.g., skyserver.sdss.org has an image service listed with access_url
     ##  http://skyserver.sdss.org/vo/DR2SIAP/SIAP.asmx/getSiapInfo?&amp;FORMAT=image/fits&amp;BANDPASS=ugriz&amp;	
     try:
@@ -247,7 +252,7 @@ def try_query(url, retries=3, timeout=60, get_params=None, post_data=None, files
         ## Python 3
         import html
         url=html.unescape(html)
-
+    """
     bq = BaseQuery()
     retry = retries
     ## By default, do a get with no parameters and assume they are in the URL
