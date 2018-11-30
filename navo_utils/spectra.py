@@ -189,10 +189,22 @@ class SpRow(Row):
             colname = self.table.stdcol_to_colname(item)
             val = None
             if colname is not None:
-                val = super().__getitem__(colname)
-            return val
+                try:
+                    ## Python 3 only 
+                    val = super().__getitem__(colname)
+                except:
+                    ## Python 2 only
+                    val = super(SpRow,self).__getitem__(colname)
+
+                return val
         else:
-            return super().__getitem__(item)
+            try:
+                ## Python 3 only 
+                return super().__getitem__(item)
+            except:
+                ## Python 2 only 
+                return super(SpRow,self).__getitem__(item)
+            #return super().__getitem__(item)
 
 
 class SpectraTable(Table):
@@ -235,9 +247,22 @@ class SpectraTable(Table):
             if colname is None:
                 return None
             else:
-                return super().__getitem__(colname)
+                try:
+                    ## Python 3 only 
+                    val = super().__getitem__(colname)
+                except:
+                    ## Python 2 only
+                    val = super(SpectraTable,self).__getitem__(colname)
+                    #return super().__getitem__(colname)
+                return val
         else:
-            return super().__getitem__(item)
+            try:
+                ## Python 3 only 
+                return super().__getitem__(item)
+            except:
+                ## Python 2 only 
+                return super(SpectraTable,self).__getitem__(item)
+
 
     def stdcol_to_colname(self, mnemonic):
         if not isinstance(mnemonic, SpectraColumn):
@@ -250,7 +275,7 @@ class SpectraTable(Table):
     def colname_to_stdcol(self, colname):
         imgcol = None
         if colname not in self.colnames:
-            raise ValueError(f'colname {colname} is not the name of a column in this table.')
+            raise ValueError("colname {} is not the name of a column in this table.".format(colname))
         else:
             utypemap = self.get_utypemap()
             for img, col in utypemap.items():
