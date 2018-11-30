@@ -69,12 +69,17 @@ class TapClass(BaseQuery):
         return aptable
 
 
-    def list_tables(self,service_url):
+    def list_tables(self,service_url,contains=None):
         """Uses TapPlus() 'TAP-compatible' function to list tables at a given service"""
         tap_service = coreTap(url=service_url)
         tables=tap_service.load_tables()
+        retlist=[]
         for table in (tables):
-            print(table.get_qualified_name())
+            tname=table.get_qualified_name()
+            if contains is None or (contains is not None and contains in tname):
+                print(tname)
+                retlist.append(tname)
+        return retlist
 
 
     def list_columns(self, service_url, tablename):
