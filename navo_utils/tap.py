@@ -6,7 +6,8 @@ VO Queries
 from __future__ import print_function, division
 #from IPython.core.debugger import Tracer
 from astroquery.query import BaseQuery
-from astroquery.utils.tap.core import Tap as coreTap
+#from astroquery.utils.tap.core import Tap as aqTap, TapPlus
+from pyvo.dal import tap as pyvoTap
 import numpy
 from . import utils
 
@@ -25,19 +26,29 @@ class TapClass(BaseQuery):
         self._RETRIES = 2 # total number of times to try
 
     def query(self, service, query, upload_file=None,upload_name=None):
-        """Prototype of TAP class.  Uploaded file is kludged, as are list_tables and list_columns.  To be finalized."""
+        """Simple wrapper based on pyvo.dal.tap.
+
+        Accepts either a string URL or an entry in an astropy table
+        that has an "access_url" entry as returned by a
+        Registry.query().  Optional file upload for
+        cross-correlations.
+
+        """
 
         if type(service) is str:
             service = {"access_url":service}
 
-        url = service['access_url'] + '/sync?'
+        ##  Remove the /sync? if you're going to use pyvoTap instead of aqTap
+        url = service['access_url'] #  + '/sync?'
 
+        ##  The following is the original navo_utils.Tap way based on astroquery's 
+        ##  BaseQuery
+        """
         tap_params = {
             "request": "doQuery",
             "lang": "ADQL",
             "query": query
         }
-
         if upload_file is not None:
             import requests, io
             if upload_name is None:
@@ -66,18 +77,39 @@ class TapClass(BaseQuery):
             response = utils.try_query(url, post_data=tap_params, timeout=self._TIMEOUT, retries=self._RETRIES)
 
         aptable = utils.astropy_table_from_votable_response(response)
-        return aptable
+
+        """
+
+        ##  Not terribly well documented what's Tap and what's TapPlus in 
+        ##  https://astroquery.readthedocs.io/en/latest/utils/tap.html
+        ##  but this should work for all generic Tap services.  
+
+        ## Using astroquery/gaia original way
+        #service=TapPlus(url)
+        #job=service.launch_job(query=query,upload_resource=upload_file, upload_table_name=upload_name)
+        #return job.get_results()
+    
+        ## Using pyvo way
+        service=pyvoTap.TAPService(url)
+        ## Internet example service.run_sync(query, uploads = {'t1': open('/path/to/votable.xml')})
+        if upload_name is not None:
+            ## UNTESTED
+            return service.run_sync(query=query,uploads={upload_name:upload_file})
+        else:
+            return service.run_sync(query=query)
+
 
 
     def list_tables(self,service_url,contains=None):
-        """Uses TapPlus() 'TAP-compatible' function to list tables at a given service"""
-        tap_service = coreTap(url=service_url)
-        tables=tap_service.load_tables()
+        """Uses astroquery/gaia Tap.load_tables()"""
+        #tap_service = aqTap(url=service_url)
+        #tables=tap_service.load_tables()
+        tables=pyvoTap.TAPService(service_url).tables
         retlist=[]
-        for table in (tables):
-            tname=table.get_qualified_name()
+        for tname in (tables.keys()):
+            #tname=table.get_qualified_name()
             if contains is None or (contains is not None and contains in tname):
-                print(tname)
+                #print(tname)
                 retlist.append(tname)
         return retlist
 
@@ -87,7 +119,7 @@ class TapClass(BaseQuery):
 
         query="select top 1 * from {}".format(tablename) 
         try:
-            table=self.query( service_url, query)
+            table=self.query( service_url, query).table
             if len(table) > 0:
                 return table.columns
             else:
