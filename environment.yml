@@ -12,6 +12,6 @@ dependencies:
   - aplpy
   - pip
   - pip:
-    - astroquery
-    - pyvo
-    - navo
+    - git+git://github.com/astropy/astroquery.git
+    - git+git://github.com/astropy/pyvo.git
+    - git+git://github.com/NASA-NAVO/navo.git
