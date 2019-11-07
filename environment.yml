@@ -1,0 +1,17 @@
+name: navo-workshop
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - numpy=1.16.*
+  - astropy=3.2.*
+  - matplotlib
+  - requests
+  - jupyterlab=1.2.*
+  - scipy
+  - aplpy
+  - pip
+  - pip:
+    - astroquery
+    - pyvo
+    - navo
