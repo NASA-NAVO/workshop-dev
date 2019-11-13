@@ -3,7 +3,7 @@ Python workshop development and scratch area.
 # Setup
 Within a suitable Python environment, Python code and notebooks at the top level can easily import and run the utility code.  This is one way to set up such an environment:
 ```
-conda create -f environment.yml
+conda env create -f environment.yml
 conda activate navo-workshop
 ```
 
