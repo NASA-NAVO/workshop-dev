@@ -11,6 +11,11 @@ from pyvo.dal import tap as pyvoTap
 import numpy
 from . import utils
 
+# For raw Data Access Layer Information requests
+import urllib.request
+import urllib.error
+import xml.etree.ElementTree
+
 __all__ = ['Tap', 'TapClass']
 
 class TapClass(BaseQuery):
@@ -126,6 +131,19 @@ class TapClass(BaseQuery):
                 return table.meta
         except:
             return table.meta
-
+        
+    def list_examples(self, service_url):
+        """Simple way to get list of ADQL example queries provided by the service. Empty list if no examples endpoint provided."""
+        retlist=[]
+        try:
+            DALI_response = urllib.request.urlopen(service_url + '/examples')
+            DALI_doctree = xml.etree.ElementTree.parse(DALI_response)
+            root = DALI_doctree.getroot()
+            exampleElements = root.findall('.//*[@property="query"]')
+            for example in exampleElements:
+                retlist.append(example.text)
+        except urllib.error.URLError:
+            retlist=[]
+        return retlist
 
 Tap = TapClass()
