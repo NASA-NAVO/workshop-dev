@@ -109,4 +109,10 @@ will throw an error because the service URL has a format hard-wired.  If you ask
 The format='' seems to solve problem.  It is combined with the hard-wired service URL without error, and it stops PyVO from adding format='all' and causing an error.
 
 
+### pyvo.dal.ssa.SSARecord.make_dataset_filename() writes suffix  'None'
+
+If you use this function to make a file name, the result for a FITS file has suffix ".None" instead of of ".fits".
+
+**Workaround**:  Rename the result.
+
 
