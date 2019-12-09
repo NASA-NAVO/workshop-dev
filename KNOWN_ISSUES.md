@@ -3,40 +3,7 @@
 PyVO is an open development, Astropy-affiliated package that is still being whipped into shape for users.  The VO services themselves are each dependent on their own institutional implementations, which vary.  There are therefore sometimes minor incompatibilities, and occasionally major ones.  Those we have run into, we document here along with any workaround.  But one benefit of the VO is that there may be other services offering the same data with a different implementation.  So if a given service is not working for you, go back to the registry to see if there might be another.  
 
 
-###  Binary/byte strings
-
-We are aware that PyVO and Astropy Tables have a habit of converting strings to binary, or byte, strings.  We hope to make this easier in future.  
-
-**Workaround**:  Use byte strings, for example, as in 
-
-> np.isin(services.table['short_name'],b'GALEX') 
-
-to match strings in the returned tables.  
-
-
-###  AllWISE service at IRSA doesn't like the verb parameter pyvo hardwires.
-
-> vo.regsearch(keywords=['allwise'], servicetype='image')[0].search(pos=[0,0],size=0.1)
-> ...
-> DALQueryError: UsageFault: Unknown parameter: verb
-
-**Workaround**:  Unknown.
-
-
-### Galex service from STScI doesn't take format specification:
-
-> galex_image_services = vo.regsearch(keywords=['galex'], servicetype='image')[0].search(pos=[0,0],size=0.1)
-
-produces lots.  But
-
-> galex_image_services = vo.regsearch(keywords=['galex'], servicetype='image')[0].search(pos=[0,0],size=0.1,format='image/fits')
-
-or 'image/jpeg' produces nothing.
-
-**Workaround**:  Don't limit the format and select after the fact.
-
-
-###  PyVO regsearch() argument keywords must be a list
+###  3. PyVO regsearch() argument keywords must be a list
 
 If you search
 
@@ -49,7 +16,7 @@ then you will get all results matching 'g', 'a', 'l', 'e', OR 'x'.
 > vo.regsearch(servicetype='image',keywords=['galex'])
 
 
-### Indexing and slicing registry results
+### 4. Indexing and slicing registry results
 
 > services=vo.regsearch(servicetype='image')
 
@@ -81,7 +48,7 @@ for example to look at only those rows and only the two specified columns.  But 
 which is ugly.  We are hoping to improve this situation, and if you come up with a more elegant solution, please tell us.  
 
 
-###  pyvo.io.vosi.vodataservice.Table.describe() fails for description None
+###  5. pyvo.io.vosi.vodataservice.Table.describe() fails for description None
 
 > heasarc_tables['abellzcat'].describe() 
 
@@ -90,6 +57,57 @@ This generates an error, because the abellzcat has an empty descriptor.  This is
 **Workaround**:
 
 > heasarc_tables['abellzcat'].description
+
+(which, however, is currently empty;  see below.)
+
+
+
+###  14.  Binary/byte strings
+
+We are aware that PyVO and Astropy Tables have a habit of converting strings to binary, or byte, strings.  We hope to make this easier in future.  
+
+**Workaround**:  Use byte strings, for example, as in 
+
+> np.isin(services.table['short_name'],b'GALEX') 
+
+to match strings in the returned tables.  
+
+
+### 19.  AllWISE service at IRSA doesn't like the verb parameter pyvo hardwires.
+
+> vo.regsearch(keywords=['allwise'], servicetype='image')[0].search(pos=[0,0],size=0.1)
+> ...
+> DALQueryError: UsageFault: Unknown parameter: verb
+
+**Workaround**:  Unknown.
+
+
+### 23. Table descriptions not retrieved correctly 
+
+> tap_services=vo.regsearch(servicetype='table',keywords=['heasarc'])
+> heasarc_tables=tap_services[0].service.tables
+> print(heasarc_tables['abellzcat'].description)
+
+returns None.  For IRSA, none of the meta data is parsed correctly.  
+
+
+** Workaround:**  Look on the registry, e.g., at
+https://vao.stsci.edu/keyword-search/?utf8=✓&search_field=all_fields&q=abellzcat 
+
+
+
+### Galex service from STScI doesn't take format specification:
+
+> galex_image_services = vo.regsearch(keywords=['galex'], servicetype='image')[0].search(pos=[0,0],size=0.1)
+
+produces lots.  But
+
+> galex_image_services = vo.regsearch(keywords=['galex'], servicetype='image')[0].search(pos=[0,0],size=0.1,format='image/fits')
+
+or 'image/jpeg' produces nothing.
+
+**Workaround**:  Don't limit the format and select after the fact.
+
 
 
 ###  Some services do not like PyVO's specification of some parameters
@@ -115,4 +133,22 @@ If you use this function to make a file name, the result for a FITS file has suf
 
 **Workaround**:  Rename the result.
 
+
+### HEASARC TAP service will not intersect a CIRCLE and a BOX
+
+This works:
+
+> tap_services=vo.regsearch(servicetype='table',keywords=['heasarc'])
+> heasarc_tables=tap_services[0].service.tables
+> query="""            SELECT * FROM rosmaster 
+>            WHERE 1=INTERSECTS(CIRCLE('ICRS', ra, dec,1),CIRCLE('ICRS', 50, -85, 1))
+> """
+> tap_services[0].search(query).table['ra','dec']
+
+But this does not:
+
+>            WHERE 1=INTERSECTS(CIRCLE('ICRS', ra, dec,1),BOX('ICRS', 50, -85, 1, 1))
+
+
+**Workaround**:  Use circles.
 
