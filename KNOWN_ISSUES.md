@@ -1,22 +1,36 @@
 #  Known issues and workarounds
 
-PyVO is an open development, Astropy-affiliated package that is still being whipped into shape for users.  The VO services themselves are each dependent on their own institutional implementations, which vary.  There are therefore sometimes minor incompatibilities, and occasionally major ones.  Those we have run into, we document here along with any workaround.  But one benefit of the VO is that there may be other services offering the same data with a different implementation.  So if a given service is not working for you, go back to the registry to see if there might be another.  
+PyVO is an open development, Astropy-affiliated package that is still being whipped into shape for end users.  The VO services themselves are each dependent on their own institutional implementations, which can and do vary.  There are therefore sometimes minor incompatibilities, and occasionally major ones.  Those we have run into, we document here along with any workarounds we find.  But one benefit of the VO is that there may be other services offering the same data with a different implementation.  So if a given service is not working for you, try going back to the registry to see if there might be another.  
 
 
-###  3. PyVO regsearch() argument keywords must be a list
+###  PyVO regsearch() keywords argument usage
 
 If you search
 
 > vo.regsearch(servicetype='image',keywords='galex')
 
-then you will get all results matching 'g', 'a', 'l', 'e', OR 'x'.
+then you will get *all* results matching 'g', 'a', 'l', 'e', *or* 'x'.  
 
-**Workaround**:  To match a string, make it a list of one.
+**Workaround**:  To match a string, make it a list of one string.
 
 > vo.regsearch(servicetype='image',keywords=['galex'])
 
+Note also that each string in the list given to PyVO's regsearch() keywords argument is searched in the subject, description, and title of the resource. 
 
-### 4. Indexing and slicing registry results
+**Workaround**:   If you want to search for the ivoid/identity, you have to do this after the fact, with e.g.,
+
+> vo.regsearch(servicetype='image',keywords=['sdss'])
+> for i,service in enumerate(tap_services):
+>    if b'gavo' in tap_services.table['ivoid'][i]:
+>        sdss_gavo_service=service
+>        break
+>  sdss_gavo_service.search(query)
+
+
+Furthermore, in the case of the resource subject metadata (not easily accessible through Python), the match is a partial string match.   In the case of the description and title, the special function *ivo_hasword* is used, which is a softer matching not currently well documented.   Some experimentation may be required to isolate what you want.  
+
+
+### Indexing and slicing registry results
 
 > services=vo.regsearch(servicetype='image')
 
@@ -45,24 +59,33 @@ for example to look at only those rows and only the two specified columns.  But 
 >  galex_stsci=services[int(np.where(np.isin(uv_services.table['short_name'],b'GALEX'))[0][0])]
 >  galex_stsci.search(pos=pos,size=size)
 
-which is ugly.  We are hoping to improve this situation, and if you come up with a more elegant solution, please tell us.  
+which is ugly and only works for exact matches between the *short_name* field and the specified (byte)string.  We are hoping to improve this situation, and if you come up with a more elegant solution, please tell us.  For something more flexible but also that requires manual intervention:
 
 
-###  5. pyvo.io.vosi.vodataservice.Table.describe() fails for description None
 
+
+###  Table descriptions
+
+Getting the descriptions of the tables available for a TAP service currently doesn't work for many services.  For example:  
+
+> tap_services=vo.regsearch(servicetype='table',keywords=['heasarc'])
+> heasarc_tables=tap_services[0].service.tables
 > heasarc_tables['abellzcat'].describe() 
 
-This generates an error, because the abellzcat has an empty descriptor.  This is a bug in pyvo that we will work on getting fixed.  
-
-**Workaround**:
+This generates an error, because the abellzcat has an empty descriptor.  This is a bug in pyvo that we will work on getting fixed.  A work-around is to use
 
 > heasarc_tables['abellzcat'].description
 
-(which, however, is currently empty;  see below.)
+that will not thrown an exception in this case (though obviously doesn't give you a description).  For other services, the tables meta data is not being parsed correctly, another issue we are working on.  
+
+**Workaround**:
+
+This part of data discovery is often still a hands-on task based, for example, on the registry:
+
+[https://vao.stsci.edu/keyword-search/?utf8=✓&search_field=all_fields&q=abellzcat](https://vao.stsci.edu/keyword-search/?utf8=✓&search_field=all_fields&q=abellzcat])
 
 
-
-###  14.  Binary/byte strings
+###  Binary/byte strings
 
 We are aware that PyVO and Astropy Tables have a habit of converting strings to binary, or byte, strings.  We hope to make this easier in future.  
 
@@ -73,26 +96,13 @@ We are aware that PyVO and Astropy Tables have a habit of converting strings to 
 to match strings in the returned tables.  
 
 
-### 19.  AllWISE service at IRSA doesn't like the verb parameter pyvo hardwires.
+### AllWISE service at IRSA doesn't like the verb parameter pyvo hardwires.
 
 > vo.regsearch(keywords=['allwise'], servicetype='image')[0].search(pos=[0,0],size=0.1)
 > ...
 > DALQueryError: UsageFault: Unknown parameter: verb
 
 **Workaround**:  Unknown.
-
-
-### 23. Table descriptions not retrieved correctly 
-
-> tap_services=vo.regsearch(servicetype='table',keywords=['heasarc'])
-> heasarc_tables=tap_services[0].service.tables
-> print(heasarc_tables['abellzcat'].description)
-
-returns None.  For IRSA, none of the meta data is parsed correctly.  
-
-
-** Workaround:**  Look on the registry, e.g., at
-https://vao.stsci.edu/keyword-search/?utf8=✓&search_field=all_fields&q=abellzcat 
 
 
 
@@ -118,37 +128,27 @@ E.g.,
 > jhu_dr7_service=services[int(np.where(np.isin(services.table['short_name'],b'SDSSDR7'))[0][1])]
 > sdss_table=jhu_dr7_service.search(pos=coords,size=0.1,format='image/jpeg')
 
-will throw an error because the service URL has a format hard-wired.  If you ask for another format, it will error.  Or if you specify no format whatsoever, then PyVO will add (silently) format='all', which will then error.
+will throw an error because the service URL has a format hard-wired.  If you ask for another format, it will error.  Or if you specify no format whatsoever, then PyVO will add (silently) *format='all'*, which will then error.
 
 **Workaround**:
 
 > sdss_table=jhu_dr7_service.search(pos=coords,size=0.1,format='')
 
-The format='' seems to solve problem.  It is combined with the hard-wired service URL without error, and it stops PyVO from adding format='all' and causing an error.
+Specifying *format=''* (two single quotes) seems to solve problem.  It is combined with the hard-wired service URL without error, and it stops PyVO from adding format='all' and causing an error.
 
 
 ### pyvo.dal.ssa.SSARecord.make_dataset_filename() writes suffix  'None'
 
 If you use this function to make a file name, the result for a FITS file has suffix ".None" instead of of ".fits".
 
-**Workaround**:  Rename the result.
+**Workaround**:  Name it yourself.  
 
 
-### HEASARC TAP service will not intersect a CIRCLE and a BOX
+### Geometric functions in TAP services
 
-This works:
+Different TAP services have different implementations of the geometric functions in ADQL (See (http://www.ivoa.net/documents/latest/ADQL.html)[the ADQL standard].)  These don't always work.  Circles usually do, intersects and polygons sometimes do not.  Not all services support regions.    
 
-> tap_services=vo.regsearch(servicetype='table',keywords=['heasarc'])
-> heasarc_tables=tap_services[0].service.tables
-> query="""            SELECT * FROM rosmaster 
->            WHERE 1=INTERSECTS(CIRCLE('ICRS', ra, dec,1),CIRCLE('ICRS', 50, -85, 1))
-> """
-> tap_services[0].search(query).table['ra','dec']
-
-But this does not:
-
->            WHERE 1=INTERSECTS(CIRCLE('ICRS', ra, dec,1),BOX('ICRS', 50, -85, 1, 1))
+**Workaround**:  Various.  Find a different service that provides the same table and try the query there.  Use simpler queries where possible. 
 
 
-**Workaround**:  Use circles.
 
