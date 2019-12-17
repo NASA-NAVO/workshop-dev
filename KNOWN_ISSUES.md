@@ -152,3 +152,24 @@ Different TAP services have different implementations of the geometric functions
 
 
 
+### Asynchronous TAP queries
+
+Each service implements TAP queries differently, whether synchronous or asynchronous.  The latter option is more powerful and therefore more complicated.
+
+** Workaround:**  If you run into issues with an asynchronous query, e.g., by using
+
+> tap_services[0].service.run_async(query)
+
+then switch to a synchronous query using
+
+> tap_services[0].search(query)
+
+(which behind the scenes is
+
+> tap_services[0].service.run_sync(query)
+
+exposed at the top level with the search() method.)  
+
+But keep in mind that you may not be getting all results.  Contact the service administrators to let them know of the problem.
+
+
