@@ -1,6 +1,13 @@
 #  Known issues and workarounds
 
-PyVO is an open development, Astropy-affiliated package that is still being whipped into shape for end users.  The VO services themselves are each dependent on their own institutional implementations, which can and do vary.  There are therefore sometimes minor incompatibilities, and occasionally major ones.  Those we have run into, we document here along with any workarounds we find.  But one benefit of the VO is that there may be other services offering the same data with a different implementation.  So if a given service is not working for you, try going back to the registry to see if there might be another.  
+PyVO is an open development, Astropy-affiliated package that is still being whipped into shape
+for end users.  The VO services themselves are each dependent on their own institutional
+implementations, which can and do vary.  There are therefore sometimes minor incompatibilities,
+and occasionally major ones.  Those we have run into, we document here along with any workarounds
+we find.  But one benefit of the VO is that there may be other services offering the same data with
+a different implementation.  So if a given service is not working for you, try going back to 
+the registry to see if there might be another.
+
 
 
 ###  PyVO regsearch() keywords argument usage
@@ -86,21 +93,16 @@ which is ugly and only works for exact matches between the *short_name* field an
 
 ###  Table descriptions
 
-Getting the descriptions of the tables available for a TAP service currently doesn't work for many services.  For example:  
+Getting the descriptions of the tables available for a TAP service may not return useful information
+in many cases.
 
 ```
-tap_services=vo.regsearch(servicetype='table',keywords=['heasarc'])
-heasarc_tables=tap_services[0].service.tables
-heasarc_tables['abellzcat'].describe() 
+tap_services=vo.regsearch(servicetype='table',keywords=['irsa'])
+irsa_tables=tap_services[0].service.tables
+irsa_tables['gaia_allwise_best_neighbour'].describe() 
 ```
 
-This generates an error, because the abellzcat has an empty descriptor.  This is a bug in pyvo that we will work on getting fixed.  A work-around is to use
-
-```
-heasarc_tables['abellzcat'].description
-```
-
-that will not thrown an exception in this case (though obviously doesn't give you a description).  For other services, the tables meta data is not being parsed correctly, another issue we are working on.  
+This returns `No description` and is something to be fixed in the service.  For other services, the tables meta data is not being parsed correctly, another issue we are working on.  
 
 **Workaround**:
 
@@ -120,17 +122,6 @@ np.isin(services.table['short_name'],b'GALEX')
 ```
 
 to match strings in the returned tables.  
-
-
-### AllWISE service at IRSA doesn't like the verb parameter pyvo hardwires.
-
-```
-vo.regsearch(keywords=['allwise'], servicetype='image')[0].search(pos=[0,0],size=0.1)
-...
-DALQueryError: UsageFault: Unknown parameter: verb
-```
-
-**Workaround**:  Unknown.
 
 
 
@@ -182,7 +173,7 @@ If you use this function to make a file name, the result for a FITS file has suf
 
 ### Geometric functions in TAP services
 
-Different TAP services have different implementations of the geometric functions in ADQL (See (http://www.ivoa.net/documents/latest/ADQL.html)[the ADQL standard].)  These don't always work.  Circles usually do, intersects and polygons sometimes do not.  Not all services support regions.    
+Different TAP services have different implementations of the geometric functions in ADQL (See [the ADQL standard](http://www.ivoa.net/documents/latest/ADQL.html).)  These don't always work.  Circles usually do, intersects and polygons sometimes do not.  Not all services support regions.  
 
 **Workaround**:  Various.  Find a different service that provides the same table and try the query there.  Use simpler queries where possible. 
 
