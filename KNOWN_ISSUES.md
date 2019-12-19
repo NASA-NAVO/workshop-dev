@@ -7,24 +7,30 @@ PyVO is an open development, Astropy-affiliated package that is still being whip
 
 If you search
 
-> vo.regsearch(servicetype='image',keywords='galex')
+```
+vo.regsearch(servicetype='image',keywords='galex')
+```
 
 then you will get *all* results matching 'g', 'a', 'l', 'e', *or* 'x'.  
 
 **Workaround**:  To match a string, make it a list of one string.
 
-> vo.regsearch(servicetype='image',keywords=['galex'])
+```
+vo.regsearch(servicetype='image',keywords=['galex'])
+```
 
 Note also that each string in the list given to PyVO's regsearch() keywords argument is searched in the subject, description, and title of the resource. 
 
 **Workaround**:   If you want to search for the ivoid/identity, you have to do this after the fact, with e.g.,
 
-> vo.regsearch(servicetype='image',keywords=['sdss'])
-> for i,service in enumerate(tap_services):
->    if b'gavo' in tap_services.table['ivoid'][i]:
->        sdss_gavo_service=service
->        break
->  sdss_gavo_service.search(query)
+```
+vo.regsearch(servicetype='image',keywords=['sdss'])
+for i,service in enumerate(tap_services):
+    if b'gavo' in tap_services.table['ivoid'][i]:
+        sdss_gavo_service=service
+        break
+sdss_gavo_service.search(query)
+```
 
 
 Furthermore, in the case of the resource subject metadata (not easily accessible through Python), the match is a partial string match.   In the case of the description and title, the special function *ivo_hasword* is used, which is a softer matching not currently well documented.   Some experimentation may be required to isolate what you want.  
@@ -32,32 +38,46 @@ Furthermore, in the case of the resource subject metadata (not easily accessible
 
 ### Indexing and slicing registry results
 
-> services=vo.regsearch(servicetype='image')
+```
+services=vo.regsearch(servicetype='image')
+```
 
 returns a RegistryResults object.  This works like a list in that
 
-> services[0]
+```
+services[0]
+```
 
 gives you the first service.  But to do actual table operations like searching for matches in the columns, you have to use its table attribute:
 
-> services[0].table['short_name']
+```
+services[0].table['short_name']
+```
 
 This is fine for browsing.  But to select a service whose short_name matches, e.g., 'GALEX', is annoying.
 
-> np.isin(uv_services.table['short_name'],b'GALEX')
+```
+np.isin(uv_services.table['short_name'],b'GALEX')
+```
 
 returns the masked column that works in a table.  So you can then print just the rows that correspond to that match with
 
-> services.table[ np.isin(uv_services.table['short_name'],b'GALEX') ]['ivoid','access_url']
+```
+services.table[ np.isin(uv_services.table['short_name'],b'GALEX') ]['ivoid','access_url']
+```
 
 for example to look at only those rows and only the two specified columns.  But this result is not *callable* the way a PyVO Results object is callable with a search() method.  To get something callable, currently you *cannot* do 
 
-> services[ np.where(np.isin(services.table['short_name'],b'GALEX'))[0] ].search(pos=pos,size=size)
+```
+services[ np.where(np.isin(services.table['short_name'],b'GALEX'))[0] ].search(pos=pos,size=size)
+```
 
 **Workaround**:  Instead, you have to do something like
 
->  galex_stsci=services[int(np.where(np.isin(uv_services.table['short_name'],b'GALEX'))[0][0])]
->  galex_stsci.search(pos=pos,size=size)
+```
+galex_stsci=services[int(np.where(np.isin(uv_services.table['short_name'],b'GALEX'))[0][0])]
+galex_stsci.search(pos=pos,size=size)
+```
 
 which is ugly and only works for exact matches between the *short_name* field and the specified (byte)string.  We are hoping to improve this situation, and if you come up with a more elegant solution, please tell us.  For something more flexible but also that requires manual intervention:
 
@@ -68,13 +88,17 @@ which is ugly and only works for exact matches between the *short_name* field an
 
 Getting the descriptions of the tables available for a TAP service currently doesn't work for many services.  For example:  
 
-> tap_services=vo.regsearch(servicetype='table',keywords=['heasarc'])
-> heasarc_tables=tap_services[0].service.tables
-> heasarc_tables['abellzcat'].describe() 
+```
+tap_services=vo.regsearch(servicetype='table',keywords=['heasarc'])
+heasarc_tables=tap_services[0].service.tables
+heasarc_tables['abellzcat'].describe() 
+```
 
 This generates an error, because the abellzcat has an empty descriptor.  This is a bug in pyvo that we will work on getting fixed.  A work-around is to use
 
-> heasarc_tables['abellzcat'].description
+```
+heasarc_tables['abellzcat'].description
+```
 
 that will not thrown an exception in this case (though obviously doesn't give you a description).  For other services, the tables meta data is not being parsed correctly, another issue we are working on.  
 
@@ -91,16 +115,20 @@ We are aware that PyVO and Astropy Tables have a habit of converting strings to 
 
 **Workaround**:  Use byte strings, for example, as in 
 
-> np.isin(services.table['short_name'],b'GALEX') 
+```
+np.isin(services.table['short_name'],b'GALEX')
+```
 
 to match strings in the returned tables.  
 
 
 ### AllWISE service at IRSA doesn't like the verb parameter pyvo hardwires.
 
-> vo.regsearch(keywords=['allwise'], servicetype='image')[0].search(pos=[0,0],size=0.1)
-> ...
-> DALQueryError: UsageFault: Unknown parameter: verb
+```
+vo.regsearch(keywords=['allwise'], servicetype='image')[0].search(pos=[0,0],size=0.1)
+...
+DALQueryError: UsageFault: Unknown parameter: verb
+```
 
 **Workaround**:  Unknown.
 
@@ -108,11 +136,15 @@ to match strings in the returned tables.
 
 ### Galex service from STScI doesn't take format specification:
 
-> galex_image_services = vo.regsearch(keywords=['galex'], servicetype='image')[0].search(pos=[0,0],size=0.1)
+```
+galex_image_services = vo.regsearch(keywords=['galex'], servicetype='image')[0].search(pos=[0,0],size=0.1)
+```
 
 produces lots.  But
 
-> galex_image_services = vo.regsearch(keywords=['galex'], servicetype='image')[0].search(pos=[0,0],size=0.1,format='image/fits')
+```
+galex_image_services = vo.regsearch(keywords=['galex'], servicetype='image')[0].search(pos=[0,0],size=0.1,format='image/fits')
+```
 
 or 'image/jpeg' produces nothing.
 
@@ -124,15 +156,19 @@ or 'image/jpeg' produces nothing.
 
 E.g.,
 
-> services=vo.regsearch(servicetype='image',keywords=['sloan'],waveband='optical')
-> jhu_dr7_service=services[int(np.where(np.isin(services.table['short_name'],b'SDSSDR7'))[0][1])]
-> sdss_table=jhu_dr7_service.search(pos=coords,size=0.1,format='image/jpeg')
+```
+services=vo.regsearch(servicetype='image',keywords=['sloan'],waveband='optical')
+jhu_dr7_service=services[int(np.where(np.isin(services.table['short_name'],b'SDSSDR7'))[0][1])]
+sdss_table=jhu_dr7_service.search(pos=coords,size=0.1,format='image/jpeg')
+```
 
 will throw an error because the service URL has a format hard-wired.  If you ask for another format, it will error.  Or if you specify no format whatsoever, then PyVO will add (silently) *format='all'*, which will then error.
 
 **Workaround**:
 
-> sdss_table=jhu_dr7_service.search(pos=coords,size=0.1,format='')
+```
+sdss_table=jhu_dr7_service.search(pos=coords,size=0.1,format='')
+```
 
 Specifying *format=''* (two single quotes) seems to solve problem.  It is combined with the hard-wired service URL without error, and it stops PyVO from adding format='all' and causing an error.
 
@@ -156,17 +192,23 @@ Different TAP services have different implementations of the geometric functions
 
 Each service implements TAP queries differently, whether synchronous or asynchronous.  The latter option is more powerful and therefore more complicated.
 
-** Workaround:**  If you run into issues with an asynchronous query, e.g., by using
+**Workaround**: If you run into issues with an asynchronous query, e.g., by using
 
-> tap_services[0].service.run_async(query)
+```
+tap_services[0].service.run_async(query)
+```
 
 then switch to a synchronous query using
 
-> tap_services[0].search(query)
+```
+tap_services[0].search(query)
+```
 
 (which behind the scenes is
 
-> tap_services[0].service.run_sync(query)
+```
+tap_services[0].service.run_sync(query)
+```
 
 exposed at the top level with the search() method.)  
 
